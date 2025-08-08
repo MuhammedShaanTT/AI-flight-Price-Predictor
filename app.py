@@ -14,8 +14,8 @@ app = Flask(__name__)
 # --- App Configuration ---
 app.config['SECRET_KEY'] = os.urandom(24)
 app.config['MYSQL_HOST'] = 'localhost'
-app.config['MYSQL_USER'] = 'root' # Change if you have a different user
-app.config['MYSQL_PASSWORD'] = 'your_password' # <-- IMPORTANT: SET YOUR PASSWORD
+app.config['MYSQL_USER'] = 'root'
+app.config['MYSQL_PASSWORD'] = 'your_password' # <-- Ensure this is your correct password
 app.config['MYSQL_DB'] = 'flight_app_db'
 
 mysql = mysql.connector.connect(
@@ -57,10 +57,10 @@ def train_model():
     data_loaded.set()
 
 def get_prediction(airline, source, dest, f_class):
-    # This function remains mostly the same as before
     prediction_df = pd.DataFrame(columns=model_columns)
     prediction_df.loc[0] = 0
-    prediction_df[f'airline_{airline}'] = 1
+    if airline != "Any":
+        prediction_df[f'airline_{airline}'] = 1
     prediction_df[f'source_city_{source}'] = 1
     prediction_df[f'destination_city_{dest}'] = 1
     prediction_df[f'class_{f_class}'] = 1
@@ -77,7 +77,6 @@ def get_prediction(airline, source, dest, f_class):
     return min(predictions, key=lambda x: x[1])
 
 def extract_entities(message):
-    # This function remains the same
     message = message.lower()
     source, destination, f_class = None, None, 'Economy'
     if 'business' in message: f_class = 'Business'
@@ -97,13 +96,11 @@ def extract_entities(message):
 def login():
     if 'loggedin' in session:
         return redirect(url_for('home'))
-
     if request.method == 'POST':
         cursor = mysql.cursor(dictionary=True)
         if 'register' in request.form:
             username = request.form['username']
             password = request.form['password']
-            # --- THIS IS THE CORRECTED LINE ---
             hashed_password = sha256_crypt.hash(password)
             cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
             account = cursor.fetchone()
@@ -145,18 +142,42 @@ def home():
 def predictor():
     data_loaded.wait()
     prediction_text = ""
-    # Simplified post logic, can be expanded if needed
+    selected_airline, selected_source, selected_destination, selected_class = None, None, None, None
+
     if request.method == 'POST':
-        # This is where the manual prediction logic would go
-        # For simplicity, we are just showing the form
-        pass
-    
-    # Pass empty values on initial GET
+        selected_airline = request.form['airline']
+        selected_source = request.form['source_city']
+        selected_destination = request.form['destination_city']
+        selected_class = request.form['flight_class']
+        result_airline = selected_airline
+
+        if selected_source == selected_destination:
+            prediction_text = "<span class='font-bold text-red-600'>Error: Departure and destination cities cannot be the same.</span>"
+        else:
+            if selected_airline == "Any":
+                all_airline_predictions = []
+                for airline_option in airlines_list:
+                    days, price = get_prediction(airline_option, selected_source, selected_destination, selected_class)
+                    all_airline_predictions.append((price, days, airline_option))
+                min_price, best_day, result_airline = min(all_airline_predictions, key=lambda x: x[0])
+            else:
+                best_day, min_price = get_prediction(selected_airline, selected_source, selected_destination, selected_class)
+
+            best_date = datetime.date.today() + datetime.timedelta(days=best_day)
+            prediction_text = (f"Lowest fare for a <b class='text-slate-900'>{selected_class}</b> ticket from "
+                               f"<b class='text-slate-900'>{selected_source} → {selected_destination}</b> on <b class='text-slate-900'>{result_airline}</b> is: "
+                               f"<br><span class='text-2xl font-bold text-green-600'>₹{min_price:,.2f}</span><br>"
+                               f"Best day to book is around: <span class='font-bold text-indigo-600'>{best_date.strftime('%A, %B %d, %Y')}</span>")
+
     return render_template('predictor.html', 
                            airlines=["Any"] + airlines_list, 
                            cities=cities_list, 
-                           classes=classes_list)
-
+                           classes=classes_list,
+                           prediction_text=prediction_text,
+                           selected_airline=selected_airline,
+                           selected_source=selected_source,
+                           selected_destination=selected_destination,
+                           selected_class=selected_class)
 
 @app.route('/chat_page')
 @login_required
@@ -167,7 +188,6 @@ def chat_page():
 @login_required
 def chat():
     data_loaded.wait()
-    # This logic remains the same as your chatbot.py
     user_message = request.json['message']
     source, destination, f_class = extract_entities(user_message)
     if not source or not destination:
@@ -193,4 +213,4 @@ def chat():
 if __name__ == '__main__':
     training_thread = threading.Thread(target=train_model)
     training_thread.start()
-    app.run(debug=True)
+    app.run(debug=True, use_reloader=False)
