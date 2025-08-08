@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}About - AI Flight Assistant{% endblock %}
+
+{% block content %}
+  <div class="max-w-4xl mx-auto">
+    <header class="text-center mb-10">
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-white">About Flight Assistant</h1>
+      <p class="mt-3 text-slate-300">Smart, data-driven flight price insights with a friendly UI.</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <section class="rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xl p-6 text-slate-100">
+        <h2 class="text-2xl font-bold">Our Mission</h2>
+        <p class="mt-3 text-slate-300">We help travelers make confident booking decisions by predicting optimal booking windows and surfacing low fares, powered by machine learning trained on historical flight data.</p>
+        <ul class="mt-4 space-y-2 text-slate-300 list-disc list-inside">
+          <li>Accurate, fast predictions using a Random Forest model</li>
+          <li>Easy tools: manual predictor and AI chat assistant</li>
+          <li>Privacy-first: minimal data collection and secure sessions</li>
+        </ul>
+      </section>
+
+      <section class="rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xl p-6 text-slate-100">
+        <h2 class="text-2xl font-bold">Contact</h2>
+        <p class="mt-3 text-slate-300">Questions, feedback, or partnership ideas? Reach us directly or send a message below.</p>
+        <div class="mt-4 space-y-2 text-slate-200">
+          <p><span class="text-slate-300">Email:</span> <a href="mailto:shaantt2005@gmail.com" class="text-indigo-300 hover:text-indigo-200">shaantt2005@gmail.com</a></p>
+          <p><span class="text-slate-300">Phone:</span> <a href="tel:+919037572701" class="text-indigo-300 hover:text-indigo-200">+91 90375 72701</a></p>
+        </div>
+      </section>
+    </div>
+
+    <section class="mt-6 rounded-2xl bg-white/90 text-slate-800 p-6 shadow-xl border border-slate-200">
+      <h3 class="text-xl font-bold">Send us a message</h3>
+      <form action="{{ url_for('contact') }}" method="post" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div>
+          <label for="name" class="block text-sm font-medium text-slate-700">Your Name</label>
+          <input type="text" id="name" name="name" required class="mt-1 w-full py-2.5 px-3 rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div>
+          <label for="email" class="block text-sm font-medium text-slate-700">Email</label>
+          <input type="email" id="email" name="email" required class="mt-1 w-full py-2.5 px-3 rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div class="md:col-span-2">
+          <label for="message" class="block text-sm font-medium text-slate-700">Message</label>
+          <textarea id="message" name="message" rows="5" required class="mt-1 w-full py-2.5 px-3 rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+        <div class="md:col-span-2">
+          <button type="submit" class="w-full md:w-auto inline-flex justify-center items-center py-2.5 px-5 rounded-md text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-pink-500 hover:opacity-95 shadow-glow">Send</button>
+        </div>
+      </form>
+    </section>
+  </div>
+{% endblock %} 

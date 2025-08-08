@@ -1,60 +1,175 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manual Flight Predictor</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style> body { background-image: url('/static/background.jpg'); background-size: cover; background-position: center; } </style>
-</head>
-<body class="bg-slate-100 flex items-center justify-center min-h-screen font-sans">
-    <div class="bg-white bg-opacity-95 p-8 rounded-xl shadow-lg w-full max-w-lg mx-4">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-slate-800">Manual Predictor ✈️</h1>
-            <a href="{{ url_for('home') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">← Back to Home</a>
-        </div>
-        
-        <form action="{{ url_for('predictor') }}" method="post" class="space-y-4">
-            <div>
-                <label for="airline" class="block text-sm font-medium text-slate-700">Airline</label>
-                <select name="airline" id="airline" required class="mt-1 block w-full py-2 px-3 border border-slate-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                    {% for airline in airlines %}<option value="{{ airline }}" {% if airline == selected_airline %}selected{% endif %}>{{ airline }}</option>{% endfor %}
-                </select>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="source_city" class="block text-sm font-medium text-slate-700">Departure City</label>
-                    <select name="source_city" id="source_city" required class="mt-1 block w-full py-2 px-3 border border-slate-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        {% for city in cities %}<option value="{{ city }}" {% if city == selected_source %}selected{% endif %}>{{ city }}</option>{% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label for="destination_city" class="block text-sm font-medium text-slate-700">Destination City</label>
-                    <select name="destination_city" id="destination_city" required class="mt-1 block w-full py-2 px-3 border border-slate-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        {% for city in cities %}<option value="{{ city }}" {% if city == selected_destination %}selected{% endif %}>{{ city }}</option>{% endfor %}
-                    </select>
-                </div>
-            </div>
-            <div>
-                <label for="flight_class" class="block text-sm font-medium text-slate-700">Flight Class</label>
-                <select name="flight_class" id="flight_class" required class="mt-1 block w-full py-2 px-3 border border-slate-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                    {% for class in classes %}<option value="{{ class }}" {% if class == selected_class %}selected{% endif %}>{{ class }}</option>{% endfor %}
-                </select>
-            </div>
-            <div>
-                <button type="submit" class="w-full flex justify-center py-3 px-4 border rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-4">
-                    Predict Lowest Fare
-                </button>
-            </div>
-        </form>
+{% extends 'base.html' %}
+{% block title %}Manual Flight Predictor{% endblock %}
 
-        {% if prediction_text %}
-        <div class="mt-8 p-4 bg-indigo-50 border border-indigo-200 rounded-lg text-center">
-            <p class="text-base text-slate-700">
-                {{ prediction_text|safe }}
-            </p>
+{% block content %}
+  <div x-data="predictorPage()" x-init="init()" class="mx-auto max-w-2xl">
+    <template x-if="!ready">
+      <div class="mb-4 p-4 rounded-xl bg-white/10 border border-white/10 text-slate-200">Preparing the model… Please wait.</div>
+    </template>
+    <div class="bg-white/90 text-slate-800 rounded-2xl shadow-xl p-6 border border-slate-200 relative">
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">Manual Predictor ✈️</h1>
+        <a href="{{ url_for('home') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">← Back to Home</a>
+      </div>
+
+      <form @submit="submitting = true" action="{{ url_for('predictor') }}" method="post" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div>
+          <label for="airline" class="block text-sm font-medium text-slate-700">Airline</label>
+          <select name="airline" id="airline" required class="mt-1 block w-full py-2.5 px-3 border border-slate-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" x-model="prefs.airline">
+            {% for airline in airlines %}
+              <option value="{{ airline }}" {% if airline == selected_airline %}selected{% endif %}>{{ airline }}</option>
+            {% endfor %}
+          </select>
         </div>
-        {% endif %}
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="source_city" class="block text-sm font-medium text-slate-700">Departure City</label>
+            <select name="source_city" id="source_city" required class="mt-1 block w-full py-2.5 px-3 border border-slate-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" x-model="prefs.source" @change="onSourceChange">
+              {% for city in cities %}
+                <option value="{{ city }}" {% if city == selected_source %}selected{% endif %}>{{ city }}</option>
+              {% endfor %}
+            </select>
+            <p class="mt-1 text-xs text-slate-500">Choose your departure city first.</p>
+          </div>
+          <div>
+            <label for="destination_city" class="block text-sm font-medium text-slate-700">Destination City</label>
+            <select name="destination_city" id="destination_city" required class="mt-1 block w-full py-2.5 px-3 border border-slate-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" x-model="prefs.destination">
+              {% for city in cities %}
+                <option value="{{ city }}" {% if city == selected_destination %}selected{% endif %}>{{ city }}</option>
+              {% endfor %}
+            </select>
+            <p class="mt-1 text-xs text-slate-500">Destination cannot be the same as departure.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="flight_class" class="block text-sm font-medium text-slate-700">Flight Class</label>
+            <select name="flight_class" id="flight_class" required class="mt-1 block w-full py-2.5 px-3 border border-slate-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" x-model="prefs.fclass">
+              {% for class in classes %}
+                <option value="{{ class }}" {% if class == selected_class %}selected{% endif %}>{{ class }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="target_date" class="block text-sm font-medium text-slate-700">Target Travel Date (optional)</label>
+            <input type="date" id="target_date" name="target_date" value="{{ selected_date or '' }}" class="mt-1 block w-full py-2.5 px-3 border border-slate-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"/>
+            <p class="mt-1 text-xs text-slate-500">Adjusts predicted fare for weekends/seasonality.</p>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full inline-flex justify-center items-center py-3 px-4 rounded-md text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-pink-500 hover:opacity-95 shadow-glow mt-2">
+          <svg x-show="submitting" class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+          <span x-text="submitting ? 'Predicting…' : 'Predict Lowest Fare'"></span>
+        </button>
+      </form>
+
+      {% if prediction_text %}
+        <div class="mt-8 p-5 rounded-xl bg-indigo-50 border border-indigo-200 text-slate-800 text-center">
+          <p class="text-base">{{ prediction_text|safe }}</p>
+        </div>
+      {% endif %}
+
+      {% if comparison %}
+        <div class="mt-6">
+          <h3 class="text-slate-800 font-semibold mb-2">Top airline options</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead>
+                <tr class="text-left text-slate-600">
+                  <th class="py-2 pr-4">Airline</th>
+                  <th class="py-2 pr-4">Best day to book</th>
+                  <th class="py-2">Estimated fare</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for airline, days, price in comparison %}
+                <tr class="border-t border-slate-200">
+                  <td class="py-2 pr-4">{{ airline }}</td>
+                  <td class="py-2 pr-4">{{ (datetime.date.today() + datetime.timedelta(days=days)).strftime('%a, %b %d') }}</td>
+                  <td class="py-2">₹{{ '%.2f'|format(price) }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% endif %}
+
+      {% if top_features %}
+        <div class="mt-6 text-sm text-slate-600">
+          <h4 class="font-semibold text-slate-800 mb-1">What influences prices most?</h4>
+          <ul class="list-disc list-inside">
+            {% for name, imp in top_features %}
+            <li><span class="font-medium">{{ name }}</span> — importance {{ '%.3f'|format(imp) }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      {% if local_explanations %}
+        <div class="mt-6 text-sm text-slate-600">
+          <h4 class="font-semibold text-slate-800 mb-1">Why this prediction?</h4>
+          <ul class="list-disc list-inside">
+            {% for name, val in local_explanations %}
+            <li><span class="font-medium">{{ name }}</span> — contribution {{ '%.2f'|format(val) }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <div x-show="submitting" class="absolute inset-0 rounded-2xl bg-white/60 grid place-items-center">
+        <div class="flex items-center gap-3 text-slate-700"><svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg> Predicting…</div>
+      </div>
     </div>
-</body>
-</html>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function predictorPage(){
+    return {
+      ready: false,
+      submitting: false,
+      prefs: { airline: {{ (selected_airline or '')|tojson }}, source: {{ (selected_source or '')|tojson }}, destination: {{ (selected_destination or '')|tojson }}, fclass: {{ (selected_class or '')|tojson }} },
+      init(){
+        // Model readiness
+        fetch('/model_status').then(r=>r.json()).then(j=>{ this.ready = j.ready; }).catch(()=>{});
+        // Saved preferences
+        const saved = localStorage.getItem('predictor_prefs');
+        if (saved){
+          try{ this.prefs = Object.assign(this.prefs, JSON.parse(saved)); }catch(e){}
+          // Apply to selects
+          for (const [k,v] of Object.entries(this.prefs)){
+            const el = document.getElementById(k==='fclass'?'flight_class':k);
+            if (el && v) el.value = v;
+          }
+        }
+        this.onSourceChange();
+        // Save on change
+        ['airline','source_city','destination_city','flight_class'].forEach(id=>{
+          const el = document.getElementById(id);
+          if(!el) return;
+          el.addEventListener('change', ()=>{
+            this.prefs.airline = document.getElementById('airline').value;
+            this.prefs.source = document.getElementById('source_city').value;
+            this.prefs.destination = document.getElementById('destination_city').value;
+            this.prefs.fclass = document.getElementById('flight_class').value;
+            localStorage.setItem('predictor_prefs', JSON.stringify(this.prefs));
+          });
+        });
+      },
+      onSourceChange(){
+        const source = document.getElementById('source_city').value;
+        const destSelect = document.getElementById('destination_city');
+        Array.from(destSelect.options).forEach(opt=>{ opt.disabled = (opt.value === source); });
+        if (destSelect.value === source){
+          for(const opt of destSelect.options){ if(!opt.disabled){ destSelect.value = opt.value; break; } }
+        }
+      }
+    }
+  }
+</script>
+{% endblock %}

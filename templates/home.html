@@ -1,31 +1,45 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home - AI Flight Assistant</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style> body { background-image: url('/static/background.jpg'); background-size: cover; background-position: center; } </style>
-</head>
-<body class="flex items-center justify-center min-h-screen font-sans">
-    <div class="bg-white bg-opacity-90 p-8 rounded-xl shadow-lg w-full max-w-2xl mx-4 text-center">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-2xl font-bold text-slate-800">Hello, {{ session.username }}!</h1>
-            <a href="{{ url_for('logout') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">Logout</a>
-        </div>
-        <h2 class="text-3xl font-bold text-slate-800">Choose Your Tool</h2>
-        <p class="text-slate-500 mt-2">Select how you want to find your next flight.</p>
+{% extends 'base.html' %}
+{% block title %}Home - AI Flight Assistant{% endblock %}
 
-        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <a href="{{ url_for('predictor') }}" class="block p-6 bg-white rounded-lg border border-slate-200 shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300">
-                <h3 class="text-xl font-bold text-indigo-600">Manual Predictor</h3>
-                <p class="mt-2 text-slate-600">Use dropdown forms to select your route and find the best price.</p>
-            </a>
-            <a href="{{ url_for('chat_page') }}" class="block p-6 bg-white rounded-lg border border-slate-200 shadow-md hover:shadow-xl hover:scale-105 transition-transform duration-300">
-                <h3 class="text-xl font-bold text-indigo-600">AI Chat Assistant</h3>
-                <p class="mt-2 text-slate-600">Chat with our AI to find flight deals using natural language.</p>
-            </a>
+{% block content %}
+  <div x-data="{ ready: false }" x-init="fetch('/model_status').then(r=>r.json()).then(j=>ready=j.ready).catch(()=>{})">
+    <template x-if="!ready">
+      <div class="mb-6 rounded-xl border border-yellow-400/30 bg-yellow-500/10 text-yellow-100 p-3">Model is training in the background. You can browse around; predictions will appear once ready.</div>
+    </template>
+  </div>
+
+  <header class="text-center mb-10">
+    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-white">Hello{{ ' ,' if session.get('username') }} {{ session.get('username') or '' }}!</h1>
+    <p class="mt-3 text-slate-300">Choose how you want to discover the best flight deals.</p>
+  </header>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <a href="{{ url_for('predictor') }}" class="group block rounded-2xl bg-white/5 border border-white/10 p-6 shadow-lg hover:shadow-glow hover:border-indigo-400/60 transition">
+      <div class="flex items-start justify-between">
+        <div>
+          <h3 class="text-xl font-bold text-white">Manual Predictor</h3>
+          <p class="mt-2 text-slate-300">Use smart dropdowns to choose your route and get the lowest fare prediction.</p>
         </div>
-    </div>
-</body>
-</html>
+        <span class="h-10 w-10 rounded-xl bg-indigo-500/20 text-indigo-300 grid place-items-center">⚙️</span>
+      </div>
+      <div class="mt-4 flex items-center gap-2 text-indigo-300">
+        <span class="text-sm">Open tool</span>
+        <svg class="h-4 w-4 transform group-hover:translate-x-1 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
+      </div>
+    </a>
+
+    <a href="{{ url_for('chat_page') }}" class="group block rounded-2xl bg-white/5 border border-white/10 p-6 shadow-lg hover:shadow-glow hover:border-indigo-400/60 transition">
+      <div class="flex items-start justify-between">
+        <div>
+          <h3 class="text-xl font-bold text-white">AI Chat Assistant</h3>
+          <p class="mt-2 text-slate-300">Describe your trip in natural language and let the AI find great prices.</p>
+        </div>
+        <span class="h-10 w-10 rounded-xl bg-indigo-500/20 text-indigo-300 grid place-items-center">💬</span>
+      </div>
+      <div class="mt-4 flex items-center gap-2 text-indigo-300">
+        <span class="text-sm">Start chatting</span>
+        <svg class="h-4 w-4 transform group-hover:translate-x-1 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M12 5l7 7-7 7"></path></svg>
+      </div>
+    </a>
+  </div>
+{% endblock %}

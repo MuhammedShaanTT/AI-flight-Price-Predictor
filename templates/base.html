@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ mobileOpen: false, dark: window.matchMedia('(prefers-color-scheme: dark)').matches }" x-init="document.documentElement.classList.toggle('dark', dark)" @keydown.window.escape="mobileOpen = false">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AI Flight Assistant{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["Inter", "ui-sans-serif", "system-ui", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81'
+            }
+          },
+          boxShadow: {
+            glow: '0 10px 30px -5px rgba(99, 102, 241, 0.35)'
+          }
+        }
+      }
+    }
+  </script>
+  {% block head_extra %}{% endblock %}
+  <style>
+    body {
+      background-image: url("{{ url_for('static', filename='background.png') }}");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans text-slate-100">
+  <div class="min-h-screen bg-gradient-to-br from-slate-950/80 via-slate-900/80 to-slate-950/80 backdrop-blur-sm">
+    <nav class="border-b border-white/10">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="{{ url_for('home') if session.get('loggedin') else url_for('login') }}" class="flex items-center gap-2 font-semibold text-white">
+          <span class="h-9 w-9 rounded-lg bg-indigo-500 grid place-items-center shadow-glow">✈️</span>
+          <span class="tracking-tight">Flight Assistant</span>
+        </a>
+        <div class="hidden md:flex items-center gap-6 text-sm">
+          {% set path = request.path %}
+          <a href="{{ url_for('about') }}" class="text-slate-300 hover:text-white {{ 'text-white font-semibold' if path.startswith('/about') else '' }}">About</a>
+          {% if session.get('loggedin') %}
+            <a href="{{ url_for('home') }}" class="text-slate-300 hover:text-white {{ 'text-white font-semibold' if path.startswith('/home') else '' }}">Home</a>
+            <a href="{{ url_for('predictor') }}" class="text-slate-300 hover:text-white {{ 'text-white font-semibold' if path.startswith('/predictor') else '' }}">Predictor</a>
+            <a href="{{ url_for('chat_page') }}" class="text-slate-300 hover:text-white {{ 'text-white font-semibold' if path.startswith('/chat') else '' }}">Chat</a>
+            <a href="{{ url_for('logout') }}" class="text-rose-300 hover:text-rose-200">Logout</a>
+          {% else %}
+            <a href="{{ url_for('login') }}" class="text-slate-300 hover:text-white {{ 'text-white font-semibold' if path == '/' else '' }}">Login</a>
+          {% endif %}
+          <button @click="dark = !dark; document.documentElement.classList.toggle('dark', dark)" class="ml-2 px-3 py-1.5 rounded-md bg-white/10 border border-white/10 text-xs text-slate-200 hover:bg-white/20">Toggle</button>
+        </div>
+        <button class="md:hidden text-white" @click="mobileOpen = !mobileOpen" aria-label="Toggle menu">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+        </button>
+      </div>
+      <div class="md:hidden" x-show="mobileOpen" x-transition>
+        <div class="px-4 pb-4 space-y-2 text-sm">
+          {% set path = request.path %}
+          <a href="{{ url_for('about') }}" class="block px-3 py-2 rounded-md bg-white/10 border border-white/10 {{ 'text-white font-semibold' if path.startswith('/about') else 'text-slate-300' }}">About</a>
+          {% if session.get('loggedin') %}
+            <a href="{{ url_for('home') }}" class="block px-3 py-2 rounded-md bg-white/10 border border-white/10 {{ 'text-white font-semibold' if path.startswith('/home') else 'text-slate-300' }}">Home</a>
+            <a href="{{ url_for('predictor') }}" class="block px-3 py-2 rounded-md bg-white/10 border border-white/10 {{ 'text-white font-semibold' if path.startswith('/predictor') else 'text-slate-300' }}">Predictor</a>
+            <a href="{{ url_for('chat_page') }}" class="block px-3 py-2 rounded-md bg-white/10 border border-white/10 {{ 'text-white font-semibold' if path.startswith('/chat') else 'text-slate-300' }}">Chat</a>
+            <a href="{{ url_for('logout') }}" class="block px-3 py-2 rounded-md bg-rose-500/20 border border-rose-400/20 text-rose-200">Logout</a>
+          {% else %}
+            <a href="{{ url_for('login') }}" class="block px-3 py-2 rounded-md bg-white/10 border border-white/10 {{ 'text-white font-semibold' if path == '/' else 'text-slate-300' }}">Login</a>
+          {% endif %}
+          <button @click="dark = !dark; document.documentElement.classList.toggle('dark', dark)" class="w-full px-3 py-2 rounded-md bg-white/10 border border-white/10 text-slate-200">Toggle Dark/Light</button>
+        </div>
+      </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 py-8">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="mb-6 space-y-3">
+            {% for category, message in messages %}
+              <div class="rounded-lg border p-3 text-sm
+                {% if category == 'danger' %} bg-rose-500/10 border-rose-400/30 text-rose-200
+                {% elif category == 'success' %} bg-emerald-500/10 border-emerald-400/30 text-emerald-200
+                {% else %} bg-slate-500/10 border-slate-400/30 text-slate-200 {% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  {% block scripts %}{% endblock %}
+  <script src="//unpkg.com/alpinejs" defer></script>
+</body>
+</html> 

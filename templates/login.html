@@ -1,58 +1,46 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - AI Flight Assistant</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style> body { background-image: url('/static/background.jpg'); background-size: cover; background-position: center; } </style>
-</head>
-<body class="flex items-center justify-center min-h-screen font-sans">
-    <div class="relative bg-white bg-opacity-90 p-8 rounded-xl shadow-lg w-full max-w-md mx-4">
-        <h1 class="text-3xl font-bold text-slate-800 text-center">Welcome ✈️</h1>
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="mt-4 p-3 rounded-md text-sm text-center
-                        {% if category == 'danger' %} bg-red-100 text-red-700 {% else %} bg-green-100 text-green-700 {% endif %}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+{% extends 'base.html' %}
+{% block title %}Login - AI Flight Assistant{% endblock %}
 
-        <div x-data="{ tab: 'login' }" class="mt-6">
-            <div class="flex border-b">
-                <button @click="tab = 'login'" :class="{ 'border-b-2 border-indigo-600 text-indigo-600': tab === 'login' }" class="flex-1 py-2 font-medium text-slate-600">Login</button>
-                <button @click="tab = 'register'" :class="{ 'border-b-2 border-indigo-600 text-indigo-600': tab === 'register' }" class="flex-1 py-2 font-medium text-slate-600">Register</button>
-            </div>
-            
-            <form x-show="tab === 'login'" action="{{ url_for('login') }}" method="post" class="space-y-4 mt-4">
-                <div>
-                    <label for="login-username" class="block text-sm font-medium text-slate-700">Username</label>
-                    <input type="text" name="username" id="login-username" required class="mt-1 block w-full py-2 px-3 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                <div>
-                    <label for="login-password" class="block text-sm font-medium text-slate-700">Password</label>
-                    <input type="password" name="password" id="login-password" required class="mt-1 block w-full py-2 px-3 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                <button type="submit" name="login" class="w-full flex justify-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Log In</button>
-            </form>
+{% block content %}
+  <div class="min-h-[70vh] grid place-items-center">
+    <div class="w-full max-w-md rounded-2xl bg-white/10 border border-white/10 backdrop-blur-xl p-6 shadow-xl">
+      <h1 class="text-3xl font-extrabold text-white text-center">Welcome ✈️</h1>
 
-            <form x-show="tab === 'register'" action="{{ url_for('login') }}" method="post" class="space-y-4 mt-4">
-                <div>
-                    <label for="register-username" class="block text-sm font-medium text-slate-700">Username</label>
-                    <input type="text" name="username" id="register-username" required class="mt-1 block w-full py-2 px-3 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                <div>
-                    <label for="register-password" class="block text-sm font-medium text-slate-700">Password</label>
-                    <input type="password" name="password" id="register-password" required class="mt-1 block w-full py-2 px-3 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                <button type="submit" name="register" class="w-full flex justify-center py-2 px-4 border rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Create Account</button>
-            </form>
+      <div x-data="{ tab: 'login' }" class="mt-6">
+        <div class="grid grid-cols-2 text-center rounded-lg bg-white/5 p-1 border border-white/10">
+          <button @click="tab = 'login'" :class="tab === 'login' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300'" class="py-2 rounded-md transition">Login</button>
+          <button @click="tab = 'register'" :class="tab === 'register' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300'" class="py-2 rounded-md transition">Register</button>
         </div>
+
+        <form x-show="tab === 'login'" action="{{ url_for('login') }}" method="post" class="space-y-4 mt-6">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <div>
+            <label for="login-username" class="block text-sm font-medium text-slate-200">Username</label>
+            <input type="text" name="username" id="login-username" required class="mt-1 block w-full py-2.5 px-3 rounded-md bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Enter your username">
+            <p class="mt-1 text-xs text-slate-400">Use your registered username.</p>
+          </div>
+          <div>
+            <label for="login-password" class="block text-sm font-medium text-slate-200">Password</label>
+            <input type="password" name="password" id="login-password" required minlength="6" class="mt-1 block w-full py-2.5 px-3 rounded-md bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Your password">
+            <p class="mt-1 text-xs text-slate-400">At least 6 characters.</p>
+          </div>
+          <button type="submit" name="login" class="w-full inline-flex justify-center items-center py-2.5 px-4 rounded-md text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-pink-500 hover:opacity-95 shadow-glow">Log In</button>
+        </form>
+
+        <form x-show="tab === 'register'" action="{{ url_for('login') }}" method="post" class="space-y-4 mt-6">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <div>
+            <label for="register-username" class="block text-sm font-medium text-slate-200">Username</label>
+            <input type="text" name="username" id="register-username" required class="mt-1 block w-full py-2.5 px-3 rounded-md bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Choose a username">
+          </div>
+          <div>
+            <label for="register-password" class="block text-sm font-medium text-slate-200">Password</label>
+            <input type="password" name="password" id="register-password" required minlength="6" class="mt-1 block w-full py-2.5 px-3 rounded-md bg-white/10 border border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Create a strong password">
+            <p class="mt-1 text-xs text-slate-400">At least 6 characters.</p>
+          </div>
+          <button type="submit" name="register" class="w-full inline-flex justify-center items-center py-2.5 px-4 rounded-md text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-pink-500 hover:opacity-95 shadow-glow">Create Account</button>
+        </form>
+      </div>
     </div>
-    <script src="//unpkg.com/alpinejs" defer></script>
-</body>
-</html>
+  </div>
+{% endblock %}

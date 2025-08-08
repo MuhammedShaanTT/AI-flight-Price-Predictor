@@ -1,69 +1,107 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Flight Assistant</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-image: url('/static/background.jpg'); background-size: cover; background-position: center; }
-        #chat-box::-webkit-scrollbar { width: 4px; }
-        #chat-box::-webkit-scrollbar-thumb { background-color: #9ca3af; border-radius: 20px; }
-    </style>
-</head>
-<body class="font-sans">
-    <div class="flex items-center justify-center min-h-screen bg-black bg-opacity-20">
-        <div class="flex flex-col w-full max-w-lg h-[80vh] bg-white bg-opacity-95 backdrop-blur-sm rounded-xl shadow-2xl">
-            <div class="p-4 border-b border-gray-300 flex justify-between items-center">
-                <a href="{{ url_for('home') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">← Home</a>
-                <h2 class="text-2xl font-bold text-center text-slate-800">AI Flight Assistant ✈️</h2>
-                <div class="w-16"></div> </div>
-            <div id="chat-box" class="flex-1 p-6 overflow-y-auto space-y-4">
-                <div class="flex justify-start">
-                    <div class="p-3 rounded-lg bg-gray-200 text-slate-800 max-w-xs">
-                        <p>Hello! How can I help you find the best flight deal today?<br><br>Try: <i>"Find a cheap business class flight from Delhi to Mumbai."</i></p>
-                    </div>
-                </div>
-            </div>
-            <div class="p-4 border-t border-gray-300">
-                <div class="flex items-center space-x-2">
-                    <input type="text" id="user-input" placeholder="Type your message..." class="flex-1 p-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <button onclick="sendMessage()" class="p-3 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-                    </button>
-                </div>
-            </div>
+{% extends 'base.html' %}
+{% block title %}AI Flight Assistant{% endblock %}
+
+{% block content %}
+  <div class="min-h-[70vh] grid place-items-center">
+    <div class="flex flex-col w-full max-w-lg h-[70vh] bg-white/10 text-white backdrop-blur-xl rounded-2xl border border-white/10 shadow-xl" x-data="chatPage()" x-init="init()">
+      <div class="p-4 border-b border-white/10 flex justify-between items-center">
+        <a href="{{ url_for('home') }}" class="text-sm font-medium text-indigo-300 hover:text-indigo-200">← Home</a>
+        <h2 class="text-xl md:text-2xl font-extrabold">AI Flight Assistant ✈️</h2>
+        <div class="w-16"></div>
+      </div>
+      <div id="chat-box" class="flex-1 p-6 overflow-y-auto space-y-4">
+        <div class="flex justify-start">
+          <div class="p-3 rounded-lg bg-white/10 border border-white/10 text-white max-w-xs">
+            <p>Hello! How can I help you find the best flight deal today?<br><br>Try: <i>"Find a cheap business class flight from Delhi to Mumbai."</i></p>
+          </div>
         </div>
+        <template x-if="!ready">
+          <div class="flex justify-start">
+            <div class="p-3 rounded-lg bg-yellow-500/20 border border-yellow-400/30 text-yellow-100 max-w-xs">
+              Model is warming up… replies may take a moment.
+            </div>
+          </div>
+        </template>
+      </div>
+      <div class="px-4 pb-2">
+        <div class="flex gap-2 flex-wrap">
+          <button class="text-xs px-3 py-1 rounded-full bg-white/10 border border-white/10 hover:bg-white/20" @click="quick('Find the cheapest flight from Mumbai to Delhi')">Cheapest Mumbai → Delhi</button>
+          <button class="text-xs px-3 py-1 rounded-full bg-white/10 border border-white/10 hover:bg-white/20" @click="quick('Business class from Delhi to Bangalore')">Business DEL → BLR</button>
+          <button class="text-xs px-3 py-1 rounded-full bg-white/10 border border-white/10 hover:bg-white/20" @click="quick('From Kolkata to Hyderabad')">CCU → HYD</button>
+        </div>
+      </div>
+      <div class="p-4 border-t border-white/10">
+        <div class="flex items-center gap-2">
+          <input type="text" id="user-input" placeholder="Type your message..." class="flex-1 p-3 rounded-full bg-white/10 border border-white/20 text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-400" @keydown.enter.prevent="sendMessage">
+          <button @click="sendMessage" class="p-3 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-400 focus:ring-offset-slate-900/40 shadow-glow">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+          </button>
+        </div>
+        <div class="mt-2" x-show="typing">
+          <div class="flex items-center gap-2 text-slate-300 text-xs"><span class="inline-block h-2 w-2 rounded-full bg-indigo-400 animate-pulse"></span> Assistant is typing…</div>
+        </div>
+      </div>
     </div>
-    <script>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function timestamp(){
+    const d = new Date();
+    return d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  }
+  function chatPage(){
+    return {
+      ready: false,
+      typing: false,
+      async init(){
+        try { const s = await fetch('/model_status').then(r=>r.json()); this.ready = s.ready; } catch(e){}
+      },
+      quick(text){ document.getElementById('user-input').value = text; this.sendMessage(); },
+      addMessage(sender, message){
         const chatBox = document.getElementById('chat-box');
-        const userInput = document.getElementById('user-input');
-        function addMessage(sender, message) {
-            const messageDiv = document.createElement('div');
-            messageDiv.innerHTML = (sender === 'user') ?
-                `<div class="flex justify-end"><div class="p-3 rounded-lg bg-indigo-600 text-white max-w-xs"><p>${message}</p></div></div>` :
-                `<div class="flex justify-start"><div class="p-3 rounded-lg bg-gray-200 text-slate-800 max-w-xs"><p>${message}</p></div></div>`;
-            chatBox.appendChild(messageDiv);
+        const wrap = document.createElement('div');
+        const time = `<div class=\"mt-1 text-[10px] opacity-70\">${timestamp()}</div>`;
+        wrap.innerHTML = (sender === 'user') ?
+          `<div class=\"flex justify-end\"><div class=\"p-3 rounded-lg bg-indigo-600 text-white max-w-xs\"><p>${message}</p>${time}</div></div>` :
+          `<div class=\"flex justify-start\"><div class=\"p-3 rounded-lg bg-white/10 border border-white/10 text-white max-w-xs\"><p>${message}</p>${time}</div></div>`;
+        chatBox.appendChild(wrap);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      },
+      async sendMessage(){
+        const input = document.getElementById('user-input');
+        const message = input.value.trim();
+        if (!message) return;
+        this.addMessage('user', message);
+        input.value = '';
+        this.typing = true;
+        try{
+          const response = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message }) });
+          const data = await response.json();
+          // Simulated streaming: reveal text piece by piece
+          const full = data.chatbot_response;
+          let shown = '';
+          const chunk = 5;
+          const interval = setInterval(()=>{
+            shown = full.slice(0, shown.length + chunk);
+            if (shown.length >= full.length){ clearInterval(interval); this.typing = false; }
+            const chatBox = document.getElementById('chat-box');
+            const last = chatBox.querySelector('.stream');
+            if (last){ last.remove(); }
+            const wrap = document.createElement('div');
+            const time = `<div class=\"mt-1 text-[10px] opacity-70\">${timestamp()}</div>`;
+            wrap.className = 'stream';
+            wrap.innerHTML = `<div class=\"flex justify-start\"><div class=\"p-3 rounded-lg bg-white/10 border border-white/10 text-white max-w-xs\"><p>${shown}</p>${time}</div></div>`;
+            chatBox.appendChild(wrap);
             chatBox.scrollTop = chatBox.scrollHeight;
+          }, 20);
+        } catch(e){
+          this.addMessage('chatbot', 'Sorry, an error occurred. Please try again.');
+          this.typing = false;
         }
-        async function sendMessage() {
-            const message = userInput.value.trim();
-            if (!message) return;
-            addMessage('user', message);
-            userInput.value = '';
-            try {
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message })
-                });
-                const data = await response.json();
-                addMessage('chatbot', data.chatbot_response);
-            } catch (error) {
-                addMessage('chatbot', 'Sorry, an error occurred. Please try again.');
-            }
-        }
-        userInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') sendMessage(); });
-    </script>
-</body>
-</html>
+      }
+    }
+  }
+</script>
+{% endblock %}
