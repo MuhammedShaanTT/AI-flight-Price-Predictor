@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Price</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style> body { background-image: url('/static/background.jpg'); background-size: cover; background-position: center; } </style>
+</head>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen font-sans">
+    <div class="bg-white bg-opacity-95 p-8 rounded-xl shadow-lg w-full max-w-lg mx-4">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-slate-800">Manual Predictor ✈️</h1>
+            <a href="{{ url_for('home') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">← Back to Home</a>
+        </div>
+        
+        <form action="#" method="post" class="space-y-4">
+             <div>
+                <label for="airline" class="block text-sm font-medium text-slate-700">Airline</label>
+                <select name="airline" id="airline" required class="mt-1 block w-full py-2 px-3 border border-slate-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    {% for airline in airlines %}<option value="{{ airline }}">{{ airline }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="source_city" class="block text-sm font-medium text-slate-700">Departure City</label>
+                    <select name="source_city" id="source_city" required class="mt-1 block w-full py-2 px-3 border border-slate-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        {% for city in cities %}<option value="{{ city }}">{{ city }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="destination_city" class="block text-sm font-medium text-slate-700">Destination City</label>
+                    <select name="destination_city" id="destination_city" required class="mt-1 block w-full py-2 px-3 border border-slate-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        {% for city in cities %}<option value="{{ city }}">{{ city }}</option>{% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label for="flight_class" class="block text-sm font-medium text-slate-700">Flight Class</label>
+                <select name="flight_class" id="flight_class" required class="mt-1 block w-full py-2 px-3 border border-slate-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    {% for class in classes %}<option value="{{ class }}">{{ class }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
+                <p class="text-base text-yellow-800">Note: This form is a visual demonstration. The prediction logic is powered by the AI Chat Assistant.</p>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
